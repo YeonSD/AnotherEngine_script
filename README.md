@@ -1,8 +1,6 @@
 # AnotherEngine Script
 
-Pokemon Another Red의 `Scripts.rxdata`를 `.rb` 스크립트로 추출해 이슈를 추적하기 위한 저장소입니다.
-
-이 저장소에서 주로 다루는 영역은 **정보 추출 HTML**입니다. 랜덤 진화, 종족값, 특성, 경험치통 같은 핵심 랜덤 메커니즘은 중심 개발자가 별도로 관리합니다.
+Pokemon Another Red의 `Scripts.rxdata`를 `.rb` 스크립트로 추출해 관리하고, 개발 이슈를 추적하기 위한 저장소입니다.
 
 ## 현재 버전
 
