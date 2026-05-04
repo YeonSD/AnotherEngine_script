@@ -189,16 +189,21 @@ def pbGeneratePokeHtmlV19(rows, p_name)
   h = RandomDataHistory
   html = "<!doctype html><html lang='ko'><head><meta charset='utf-8'><title>Another Red - #{h.html_escape(p_name)}</title>"
   html += "<style>
-    body { font-family: 'Malgun Gothic', sans-serif; background: #f4f7f6; padding: 20px; }
-    .container { max-width: 1500px; margin: 0 auto; background: #fff; padding: 25px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+    body { font-family: 'Malgun Gothic', sans-serif; background: #f4f7f6; padding: 20px 20px 46px; overflow-x: auto; }
+    .container { min-width: 1500px; margin: 0 auto; background: #fff; padding: 25px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
     h1 { text-align: center; color: #2d3436; margin-bottom: 5px; }
     .meta { text-align: center; color: #636e72; margin-bottom: 20px; font-size: 13px; border-bottom: 1px solid #eee; padding-bottom: 15px; }
-    .table-wrap { overflow-x: auto; }
+    .table-wrap { overflow: visible; }
     table { width: 100%; min-width: 1420px; border-collapse: collapse; }
     th { background: #6c5ce7; color: white; padding: 12px; position: sticky; top: 0; font-size: 14px; z-index: 10; }
     th.sortable { cursor: pointer; user-select: none; }
     th.sortable .arrow { display: inline-block; margin-left: 6px; font-size: 11px; opacity: 0.95; }
     td { border-bottom: 1px solid #eee; padding: 10px; text-align: center; font-size: 13px; }
+    .sticky-no { position: sticky; left: 0; z-index: 6; min-width: 60px; width: 60px; }
+    .sticky-name { position: sticky; left: 60px; z-index: 6; min-width: 150px; width: 150px; }
+    th.sticky-no, th.sticky-name { z-index: 20; }
+    td.sticky-no, td.sticky-name { background: #fff; }
+    tr:hover td.sticky-no, tr:hover td.sticky-name { background: #f8f7ff; }
     tr:hover { background: #f8f7ff; }
     .tag { font-size: 11px; padding: 3px 8px; border-radius: 5px; color: white; font-weight: bold; display: inline-block; }
     .tag-mega { background: #e84393; }
@@ -216,18 +221,21 @@ def pbGeneratePokeHtmlV19(rows, p_name)
     .modal-head { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid #eee; font-weight: bold; }
     .modal-body { padding: 20px; white-space: pre-line; line-height: 1.8; text-align: left; max-height: 65vh; overflow: auto; }
     .modal-close { border: 0; background: #2d3436; color: white; border-radius: 6px; padding: 8px 14px; cursor: pointer; }
+    .fixed-scroll { position: fixed; left: 0; right: 0; bottom: 0; height: 22px; overflow-x: auto; overflow-y: hidden; background: rgba(244,247,246,0.96); z-index: 900; }
+    .fixed-scroll-inner { height: 1px; }
   </style></head><body>"
   html += "<div class='container'><h1>Another Red 랜덤 데이터</h1>"
   html += "<div class='meta'>플레이어: #{h.html_escape(p_name)} | 추출 시각: #{gen_at}</div>"
   html += "<div class='table-wrap'><table><thead><tr>"
-  html += "<th style='width:60px'>No</th><th>이름</th><th>분류</th><th>상세 폼</th><th>특성</th><th>지닌 물건 히스토리</th>"
-  html += "<th class='sortable' data-col='6'>HP<span class='arrow'>↕</span></th>"
-  html += "<th class='sortable' data-col='7'>ATK<span class='arrow'>↕</span></th>"
-  html += "<th class='sortable' data-col='8'>DEF<span class='arrow'>↕</span></th>"
-  html += "<th class='sortable' data-col='9'>SPA<span class='arrow'>↕</span></th>"
-  html += "<th class='sortable' data-col='10'>SPD<span class='arrow'>↕</span></th>"
-  html += "<th class='sortable' data-col='11'>SPE<span class='arrow'>↕</span></th>"
-  html += "<th class='sortable' data-col='12' style='width:80px'>합계<span class='arrow'>↕</span></th><th>기술 히스토리</th>"
+  html += "<th class='sticky-no'>No</th><th class='sticky-name'>이름</th><th>분류</th><th>상세 폼</th><th>특성</th>"
+  html += "<th class='sortable' data-col='5'>HP<span class='arrow'>↕</span></th>"
+  html += "<th class='sortable' data-col='6'>ATK<span class='arrow'>↕</span></th>"
+  html += "<th class='sortable' data-col='7'>DEF<span class='arrow'>↕</span></th>"
+  html += "<th class='sortable' data-col='8'>SPA<span class='arrow'>↕</span></th>"
+  html += "<th class='sortable' data-col='9'>SPD<span class='arrow'>↕</span></th>"
+  html += "<th class='sortable' data-col='10'>SPE<span class='arrow'>↕</span></th>"
+  html += "<th class='sortable' data-col='11' style='width:80px'>합계<span class='arrow'>↕</span></th>"
+  html += "<th>지닌 물건 히스토리</th><th>기술 히스토리</th>"
   html += "</tr></thead><tbody id='list'>"
 
   rows.each_with_index do |r, row_index|
@@ -239,24 +247,28 @@ def pbGeneratePokeHtmlV19(rows, p_name)
                 when "특수 폼 진화 체인지" then "tag tag-spec"
                 else "tag tag-default"
                 end
-    html += "<tr data-original='#{row_index}'><td>#{sprintf('%04d', r[:no])}</td>"
-    html += "<td style='text-align:left; font-weight:bold;'>#{h.html_escape(r[:name])}</td>"
+    html += "<tr data-original='#{row_index}'><td class='sticky-no'>#{sprintf('%04d', r[:no])}</td>"
+    html += "<td class='sticky-name' style='text-align:left; font-weight:bold;'>#{h.html_escape(r[:name])}</td>"
     html += "<td><span class='#{tag_class}'>#{h.html_escape(r[:cat])}</span></td>"
     html += "<td><span style='color:#636e72;'>#{h.html_escape(r[:form_display])}</span></td>"
     html += "<td class='ability'>#{h.html_escape(r[:ability])}</td>"
-    html += "<td class='hist-col'>#{h.history_cell(item_lines)}</td>"
     r[:stats].each { |s| html += "<td>#{s}</td>" }
     html += "<td class='total'>#{r[:total]}</td>"
+    html += "<td class='hist-col'>#{h.history_cell(item_lines)}</td>"
     html += "<td class='hist-col'>#{h.history_cell(move_lines)}</td></tr>"
   end
 
   html += "</tbody></table></div>"
   html += "<div class='footer'>추출 시각: #{gen_at}</div>"
   html += "</div>"
+  html += "<div class='fixed-scroll' id='fixedScroll'><div class='fixed-scroll-inner' id='fixedScrollInner'></div></div>"
   html += "<div class='modal-bg' id='histModal'><div class='modal'><div class='modal-head'><span>히스토리</span><button class='modal-close' id='histClose'>닫기</button></div><div class='modal-body' id='histBody'></div></div></div>"
   html += "<script>
     document.addEventListener('DOMContentLoaded', () => {
       const tbody = document.getElementById('list');
+      const container = document.querySelector('.container');
+      const fixedScroll = document.getElementById('fixedScroll');
+      const fixedScrollInner = document.getElementById('fixedScrollInner');
       const modal = document.getElementById('histModal');
       const body = document.getElementById('histBody');
       const close = document.getElementById('histClose');
@@ -304,6 +316,24 @@ def pbGeneratePokeHtmlV19(rows, p_name)
       });
       close.addEventListener('click', () => { modal.style.display = 'none'; });
       modal.addEventListener('click', e => { if (e.target === modal) modal.style.display = 'none'; });
+      const syncWidth = () => {
+        fixedScrollInner.style.width = `${Math.max(document.body.scrollWidth, container.scrollWidth)}px`;
+      };
+      let syncing = false;
+      fixedScroll.addEventListener('scroll', () => {
+        if (syncing) return;
+        syncing = true;
+        window.scrollTo({ left: fixedScroll.scrollLeft });
+        syncing = false;
+      });
+      window.addEventListener('scroll', () => {
+        if (syncing) return;
+        syncing = true;
+        fixedScroll.scrollLeft = window.scrollX;
+        syncing = false;
+      });
+      window.addEventListener('resize', syncWidth);
+      syncWidth();
     });
   </script></body></html>"
   return html
