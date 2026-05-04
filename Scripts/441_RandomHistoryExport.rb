@@ -184,10 +184,10 @@ def pbGeneratePokeHtmlV19(rows, p_name)
   html = "<!doctype html><html lang='ko'><head><meta charset='utf-8'><title>Another Red - #{h.html_escape(p_name)}</title>"
   html += "<style>
     body { font-family: 'Malgun Gothic', sans-serif; background: #f4f7f6; padding: 20px 20px 46px; overflow-x: hidden; }
-    .container { max-width: 1500px; margin: 0 auto; background: #fff; padding: 25px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+    .container { width: 100%; max-width: 1500px; box-sizing: border-box; margin: 0 auto; background: #fff; padding: 25px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); overflow: hidden; }
     h1 { text-align: center; color: #2d3436; margin-bottom: 5px; }
     .meta { text-align: center; color: #636e72; margin-bottom: 20px; font-size: 13px; border-bottom: 1px solid #eee; padding-bottom: 15px; }
-    .table-wrap { overflow-x: auto; scrollbar-width: none; }
+    .table-wrap { width: 100%; overflow-x: auto; scrollbar-width: none; }
     .table-wrap::-webkit-scrollbar { display: none; }
     table { width: 100%; min-width: 1240px; border-collapse: collapse; }
     th { background: #6c5ce7; color: white; padding: 12px; position: sticky; top: 0; font-size: 14px; z-index: 10; }
