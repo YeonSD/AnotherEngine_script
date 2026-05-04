@@ -1,0 +1,6 @@
+*.rxdata
+!release-assets/Scripts.rxdata
+__pycache__/
+.verify/
+.DS_Store
+Thumbs.db
