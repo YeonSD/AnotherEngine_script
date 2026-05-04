@@ -1,27 +1,29 @@
 # AnotherEngine Script
 
-Pokemon Another Red용 `Scripts.rxdata`를 RGSS 스크립트 단위의 `.rb` 파일로 추출해 관리하는 저장소입니다.
+Pokemon Another Red의 `Scripts.rxdata`를 `.rb` 스크립트로 추출해 이슈를 추적하기 위한 저장소입니다.
+
+이 저장소에서 주로 다루는 영역은 **정보 추출 HTML**입니다. 랜덤 진화, 종족값, 특성, 경험치통 같은 핵심 랜덤 메커니즘은 중심 개발자가 별도로 관리합니다.
 
 ## 현재 버전
 
 - 버전: `v1.0`
-- 기준 파일: `Data/Scripts.rxdata`
+- 기준 파일: `release-assets/Scripts.rxdata`
 - 추출 섹션 수: 443개
-- 최신 추출본: `Scripts/`
-- 릴리즈 업로드용 파일: `release-assets/Scripts.rxdata`
+- 추출본: `Scripts/`
+- 섹션 목록: `Scripts/manifest.tsv`
 
 ## 폴더 구조
 
-- `Scripts/`: `Scripts.rxdata`에서 추출한 Ruby 스크립트 섹션입니다.
+- `Scripts/`: `Scripts.rxdata`에서 추출한 Ruby 스크립트입니다.
 - `Scripts/manifest.tsv`: 섹션 번호, 섹션 ID, 섹션명, 파일명, SHA-256 해시 목록입니다.
 - `tools/`: 추출/패킹 보조 스크립트입니다.
-- `release-assets/Scripts.rxdata`: 게임에 넣어 테스트할 수 있는 패킹된 스크립트 파일입니다.
+- `release-assets/Scripts.rxdata`: v1.0 릴리즈에 첨부한 테스트용 파일입니다.
 
-## 확인된 주요 이슈
+## 확인 중인 주요 이슈
 
 ### 1. 특수 폼 포켓몬의 랜덤 진화 후 폼 누수
 
-알로라 꼬렛처럼 `form = 1`인 포켓몬이 랜덤 진화로 토대부기 같은 기본 폼 포켓몬이 될 때, 종족은 바뀌었는데 기존 폼 값이 남는 것으로 보입니다.
+알로라 꼬렛처럼 `form = 1`인 포켓몬이 랜덤 진화로 토대부기 같은 기본 폼 포켓몬이 될 때, 종족은 바뀌었는데 기존 폼 값이 남는 것으로 의심됩니다.
 
 의심 지점:
 
@@ -49,7 +51,7 @@ end
 @form = (default_form >= 0) ? default_form : new_species_data.form
 ```
 
-또는 같은 의미로, 종족이 바뀔 때마다 새 species 데이터 기준으로 폼을 항상 재설정해야 합니다.
+핵심은 종족이 바뀔 때마다 새 species 데이터 기준으로 폼을 항상 다시 세팅하는 것입니다.
 
 ### 2. 경험치통 통일 시스템과 경험치 사탕 오류
 
@@ -76,12 +78,10 @@ def pbSyncUnifiedExpFloor(pkmn)
 end
 ```
 
-최소 적용 지점:
+최소 적용 후보:
 
 - `pbGainExpOne` 시작부
 - `pbChangeExp` 시작부
-
-이렇게 하면 전투, 포획, 경험치 사탕 경로를 모두 방어할 수 있습니다.
 
 ### 3. HTML 종족값 검색/정렬 개선
 
@@ -124,41 +124,3 @@ end
 5. `Submit new issue`를 누릅니다.
 
 완벽하게 쓰지 않아도 됩니다. 재현 순서와 스크린샷이 가장 중요합니다.
-
-## 개발자/AI Agent 작업 규칙
-
-- `Scripts.rxdata`를 직접 수정한 뒤에는 반드시 다시 추출해서 `Scripts/`와 `manifest.tsv`를 갱신합니다.
-- 기존 개발자 랜덤 메커니즘과 HTML 정보 추출 기능은 가능한 한 분리합니다.
-- 버그 수정은 이슈 번호나 증상 이름을 커밋 메시지에 포함합니다.
-- 릴리즈에는 테스트 가능한 `Scripts.rxdata`를 첨부합니다.
-- 대형 게임 에셋, 오디오, 그래픽 리소스는 이 저장소에 올리지 않습니다.
-
-## 협업 권한 추가 방법
-
-저장소 관리자만 설정할 수 있습니다.
-
-1. GitHub 저장소 페이지에서 `Settings`를 누릅니다.
-2. 왼쪽 메뉴에서 `Collaborators and teams`를 누릅니다.
-3. `Add people` 버튼을 누릅니다.
-4. 추가할 사람의 GitHub ID 또는 이메일을 입력합니다.
-5. 권한을 선택합니다.
-   - 코드 push/branch/tag/release까지 맡길 개발자: `Write` 또는 `Maintain`
-   - 저장소 설정까지 거의 전부 맡길 사람: `Admin`
-6. 초대받은 사람이 이메일 또는 GitHub 알림에서 초대를 수락해야 적용됩니다.
-
-AI Agent가 push하려면 해당 Agent를 실행하는 사람의 GitHub 계정에 push 권한이 있어야 합니다. 보통은 각 개발자 계정을 collaborator로 추가하고, 그 개발자 PC의 git 인증으로 Agent가 push하게 하는 방식이 가장 단순합니다.
-
-## 릴리즈 절차
-
-1. `Scripts/`와 `release-assets/Scripts.rxdata`가 같은 내용인지 확인합니다.
-2. 커밋합니다.
-3. 태그를 만듭니다.
-   ```bash
-   git tag v1.0
-   git push origin main
-   git push origin v1.0
-   ```
-4. GitHub 저장소의 `Releases`에서 `Draft a new release`를 누릅니다.
-5. 태그 `v1.0`을 선택합니다.
-6. `release-assets/Scripts.rxdata`를 첨부합니다.
-7. `Publish release`를 누릅니다.
