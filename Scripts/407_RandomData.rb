@@ -47,6 +47,29 @@ def pbGetFormCategoryTag(sp_data, f_id, s_id)
   return "기본"
 end
 
+def pbGetRandomExportFormDisplay(sp_data, f_id)
+  return (f_id == 0 ? "기본" : "폼 #{f_id}") if !sp_data
+  real_form = sp_data.real_form_name.to_s
+  if real_form.start_with?("Mega ")
+    suffix = real_form.sub(/^Mega\s+#{Regexp.escape(sp_data.real_name.to_s)}/, "")
+    suffix = suffix.gsub(/\s+/, "")
+    return "메가 #{sp_data.name}#{suffix}"
+  end
+  if sp_data.species == :ROTOM
+    rotom_forms = {
+      1 => "히트로토무",
+      2 => "워시로토무",
+      3 => "프로스트로토무",
+      4 => "스핀로토무",
+      5 => "커트로토무"
+    }
+    return rotom_forms[f_id] if rotom_forms[f_id]
+  end
+  form_name = sp_data.form_name
+  return form_name if form_name && !form_name.empty?
+  return f_id == 0 ? "기본" : "폼 #{f_id}"
+end
+
 # 4. 도감 데이터 추출기
 def pbExportFullRandomDataHtml
   p_name = ($player ? $player.name : "Player")
@@ -87,7 +110,7 @@ def pbExportFullRandomDataHtml
       temp_species_rows << {
         :no => (dex_map[s_id] || 0),
         :name => (sp_data ? sp_data.name : GameData::Species.get(s_id).name),
-        :form_display => (sp_data && sp_data.form_name && !sp_data.form_name.empty? ? sp_data.form_name : (f_id == 0 ? "기본" : "폼 #{f_id}")),
+        :form_display => pbGetRandomExportFormDisplay(sp_data, f_id),
         :cat => cat_tag,
         :ability => abi_name,
         :stats => stats,
