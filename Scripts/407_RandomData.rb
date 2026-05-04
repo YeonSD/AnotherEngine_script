@@ -55,6 +55,16 @@ def pbGetRandomExportFormDisplay(sp_data, f_id)
     suffix = suffix.gsub(/\s+/, "")
     return "메가 #{sp_data.name}#{suffix}"
   end
+  if sp_data.species == :ROTOM
+    rotom_forms = {
+      1 => "히트로토무",
+      2 => "워시로토무",
+      3 => "프로스트로토무",
+      4 => "스핀로토무",
+      5 => "커트로토무"
+    }
+    return rotom_forms[f_id] if rotom_forms[f_id]
+  end
   form_name = sp_data.form_name
   return form_name if form_name && !form_name.empty?
   return f_id == 0 ? "기본" : "폼 #{f_id}"
