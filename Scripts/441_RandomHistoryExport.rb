@@ -288,8 +288,9 @@ def pbGeneratePokeHtmlV19(rows, p_name)
         });
       });
       const syncWidth = () => {
-        fixedScrollInner.style.width = `${tableWrap.scrollWidth}px`;
-        fixedScroll.style.display = tableWrap.scrollWidth > tableWrap.clientWidth ? 'block' : 'none';
+        const maxTableScroll = Math.max(0, tableWrap.scrollWidth - tableWrap.clientWidth);
+        fixedScrollInner.style.width = `${fixedScroll.clientWidth + maxTableScroll}px`;
+        fixedScroll.style.display = maxTableScroll > 1 ? 'block' : 'none';
       };
       let syncing = false;
       fixedScroll.addEventListener('scroll', () => {
