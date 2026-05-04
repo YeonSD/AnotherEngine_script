@@ -141,17 +141,18 @@ class Pokemon
   # @param species_id [Symbol, String, GameData::Species] ID of the species to change this Pokémon to
   def species=(species_id)
     new_species_data = GameData::Species.get(species_id)
-    return if @species == new_species_data.species
-    @species     = new_species_data.species
-    default_form = new_species_data.default_form
-    if default_form >= 0
-      @form      = default_form
-    elsif new_species_data.form > 0
-      @form      = new_species_data.form
-    end
+
+    new_species = new_species_data.species
+    new_form    = new_species_data.base_form
+    species_changed = (@species != new_species)
+    form_changed    = (@form != new_form)
+    return if !species_changed && !form_changed
+
+    @species     = new_species
+    @form        = new_form
     @forced_form = nil
     @gender      = nil if singleGendered?
-    @level       = nil   # In case growth rate is different for the new species
+    @level       = nil if species_changed   # In case growth rate is different for the new species
     @ability     = nil
     calc_stats
   end
