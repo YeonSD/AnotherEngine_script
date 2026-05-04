@@ -15,68 +15,167 @@ ANOTHER_FORM = [
 	:GRENINJA_2,:MOLTRES_1,:URSALUNA_1,:URSHIFU_1,:ZAPDOS_1,
 ].uniq
 
+class Pokemon
+	def evo_count
+		@evo_count = 0 if @evo_count.nil?
+		return @evo_count
+	end
+	attr_writer :evo_count
+end
+
+class PokemonGlobalMetadata
+	attr_accessor :custom_evo_map
+
+	unless method_defined?(:ys_random_evo_map_initialize)
+		alias ys_random_evo_map_initialize initialize
+	end
+	def initialize
+		ys_random_evo_map_initialize
+		@custom_evo_map ||= { 0 => {}, 1 => {} }
+	end
+end
+
 def giverandom(pkmn)
-	#랜덤 타입 부여
 	give_random_type(pkmn)
-	#랜덤 종족값 부여
 	give_random_stats(pkmn)
-	#랜덤 기술 목록 부여
 	giveRandomMoveList(pkmn)
-	#랜덤 기술 목록 부여
 	giveRandomEXMoveList(pkmn)
 end
 
-def give_random_type(pokemon) #랜덤 포켓몬 타입
+def give_random_type(pokemon)
 	return if !$player.random_type_switch
-  return if !pokemon.is_a?(Pokemon)
-	
+	return if !pokemon.is_a?(Pokemon)
+
 	random_type_hash = {}
-	
-	formcount=0
-	
+	formcount = 0
 	GameData::Species.each do |sp|
-    next if sp.species != pokemon.species
-		# 무작위 타입 2개 선택
+		next if sp.species != pokemon.species
 		shuffled_list = RANDOM_TYPE_POOL.shuffle
 		new_type1 = shuffled_list.sample
 		shuffled_list = RANDOM_TYPE_POOL.shuffle
 		new_type2 = shuffled_list.sample
-    
-		#폼 당 배열을 저장
-		if new_type1 == new_type2 || rand(100)+1 <= 7
+		if new_type1 == new_type2 || rand(100) + 1 <= 7
 			random_type_hash[formcount] = [new_type1]
 		else
 			random_type_hash[formcount] = [new_type1, new_type2]
 		end
-		formcount+=1
-  end
-	
-	# 포켓몬 객체에 해시를 저장합니다.
-  pokemon.random_type = random_type_hash
-	
+		formcount += 1
+	end
+	pokemon.random_type = random_type_hash
 	pokemon.calc_stats
 end
 
-#랜덤 포켓몬 진화,인카운터
-def give_random_pokemon(pokemon)
+# Random evolution candidate filter. This blocks temporary/battle-only forms
+# while still allowing base species and ordinary regional forms.
+def pbRandomEvoAllowedSpecies?(sp)
+	return false if !sp
+	return false if sp.id == :EGG || sp.has_flag?("Egg")
+	return false if sp.mega_stone || sp.mega_move
+	return false if sp.unmega_form && sp.unmega_form > 0
+	id_text = sp.id.to_s.upcase
+	form_text = sp.form_name.to_s.upcase
+	return false if id_text.include?("GMAX") || id_text.include?("TERA")
+	return false if form_text.include?("MEGA") || form_text.include?("GMAX")
+	return false if form_text.include?("GIGANTAMAX") || form_text.include?("PRIMAL")
+	return false if form_text.include?("TERA")
+	return false if sp.form > 2
+	return true
+end
+
+def pbRandomEvoHasForwardEvolution?(sp)
+	return false if !sp
+	return sp.get_evolutions(true).length > 0
+end
+
+def pbRandomPokemonLegacyCandidate(except_species = nil)
 	pokemon_list = []
 	GameData::Species.each do |s|
 		next if s.form != 0
 		next if s.id == :EGG
 		pokemon_list << s.id
 	end
-	
-	pokemon_list = (pokemon_list+ANOTHER_FORM)
-	shuffled_safe_list = pokemon_list.shuffle
-	new_species = :NECROZMA_3 
-	if !pokemon_list.empty?
-		loop do
-			new_species = pokemon_list.sample
-			break if new_species != pokemon
-		end
+	pokemon_list = (pokemon_list + ANOTHER_FORM).uniq
+	return nil if pokemon_list.empty?
+	new_species = :NECROZMA_3
+	loop do
+		new_species = pokemon_list.sample
+		break if new_species != except_species
 	end
 	return new_species
 end
+
+def pbGenerateAllEvolutionRoutes
+	return if !$player || $player.random_evo_switch == 0
+	return if !$PokemonGlobal
+	$PokemonGlobal.custom_evo_map ||= { 0 => {}, 1 => {} }
+	return if !$PokemonGlobal.custom_evo_map[0].empty?
+
+	mid_pool = []
+	final_pool = []
+	GameData::Species.each do |sp|
+		next if !pbRandomEvoAllowedSpecies?(sp)
+		if pbRandomEvoHasForwardEvolution?(sp)
+			mid_pool.push(sp.id)
+		else
+			final_pool.push(sp.id)
+		end
+	end
+	mid_pool.uniq!
+	final_pool.uniq!
+	return if mid_pool.empty? || final_pool.empty?
+
+	source_ids = []
+	GameData::Species.each do |sp|
+		next if !pbRandomEvoAllowedSpecies?(sp)
+		source_ids.push(sp.id)
+	end
+	source_ids.uniq!
+
+	used_mid = []
+	used_fin = []
+	source_ids.each do |src_id|
+		avail_mid = mid_pool - used_mid
+		target_mid = avail_mid.empty? ? mid_pool.sample : avail_mid.sample
+		next if !target_mid
+		$PokemonGlobal.custom_evo_map[0][src_id] = target_mid
+		used_mid.push(target_mid)
+
+		avail_fin = final_pool - used_fin
+		target_fin = avail_fin.empty? ? final_pool.sample : avail_fin.sample
+		next if !target_fin
+		$PokemonGlobal.custom_evo_map[1][target_mid] ||= target_fin
+		used_fin.push(target_fin)
+	end
+end
+
+# Random species evolution. Real Pokemon objects use the saved three-stage map;
+# legacy callers such as random party generation keep the old one-shot picker.
+def give_random_pokemon(pokemon)
+	return pbRandomPokemonLegacyCandidate(pokemon) if !pokemon.is_a?(Pokemon)
+	return nil if !$player || $player.random_evo_switch == 0
+	return nil if !$PokemonGlobal
+	$PokemonGlobal.custom_evo_map ||= { 0 => {}, 1 => {} }
+	pbGenerateAllEvolutionRoutes if $PokemonGlobal.custom_evo_map[0].empty?
+	count = pokemon.evo_count
+	return nil if count >= 2
+	current_id = pokemon.species_data.id
+	return $PokemonGlobal.custom_evo_map[count][current_id]
+end
+
+class PokemonEvolutionScene
+	unless method_defined?(:ys_three_stage_evo_success)
+		alias ys_three_stage_evo_success pbEvolutionSuccess
+	end
+	def pbEvolutionSuccess
+		ys_three_stage_evo_success
+		@pokemon.evo_count = (@pokemon.evo_count || 0) + 1 if $player && $player.random_evo_switch != 0
+	end
+end
+
+EventHandlers.add(:on_player_create, :generate_all_evo_routes, proc {
+	pbGenerateAllEvolutionRoutes
+})
+
 
 def give_random_stats(pkmn) #랜덤 종족값
 	return if !$player.random_stats_switch || $player.random_stats_switch == 0
