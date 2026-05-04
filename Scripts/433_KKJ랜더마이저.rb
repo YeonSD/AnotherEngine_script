@@ -63,7 +63,7 @@ def give_random_pokemon(pokemon)
 	GameData::Species.each do |s|
 		next if s.form != 0
 		next if s.id == :EGG
-		pokemon_list << s
+		pokemon_list << s.id
 	end
 	
 	pokemon_list = (pokemon_list+ANOTHER_FORM)
@@ -213,7 +213,7 @@ def give_random_pokemon_baby
     next if sp.flags.include?("UltraBeast")
     next if sp.form != 0
     next if sp.flags.include?("Paradox")
-    pokemon_list << sp
+    pokemon_list << sp.id
   end
 	
 	shuffled_safe_list = pokemon_list.shuffle
