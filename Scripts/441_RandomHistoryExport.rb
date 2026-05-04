@@ -193,10 +193,11 @@ def pbGeneratePokeHtmlV19(rows, p_name)
     .container { max-width: 1500px; margin: 0 auto; background: #fff; padding: 25px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
     h1 { text-align: center; color: #2d3436; margin-bottom: 5px; }
     .meta { text-align: center; color: #636e72; margin-bottom: 20px; font-size: 13px; border-bottom: 1px solid #eee; padding-bottom: 15px; }
-    #search { width: 100%; padding: 15px; border: 2px solid #6c5ce7; border-radius: 10px; margin-bottom: 20px; box-sizing: border-box; outline: none; font-size: 16px; box-shadow: 0 2px 5px rgba(108, 92, 231, 0.2); }
     .table-wrap { overflow-x: auto; }
     table { width: 100%; min-width: 1420px; border-collapse: collapse; }
     th { background: #6c5ce7; color: white; padding: 12px; position: sticky; top: 0; font-size: 14px; z-index: 10; }
+    th.sortable { cursor: pointer; user-select: none; }
+    th.sortable .arrow { display: inline-block; margin-left: 6px; font-size: 11px; opacity: 0.95; }
     td { border-bottom: 1px solid #eee; padding: 10px; text-align: center; font-size: 13px; }
     tr:hover { background: #f8f7ff; }
     .tag { font-size: 11px; padding: 3px 8px; border-radius: 5px; color: white; font-weight: bold; display: inline-block; }
@@ -218,23 +219,27 @@ def pbGeneratePokeHtmlV19(rows, p_name)
   </style></head><body>"
   html += "<div class='container'><h1>Another Red 랜덤 데이터</h1>"
   html += "<div class='meta'>플레이어: #{h.html_escape(p_name)} | 추출 시각: #{gen_at}</div>"
-  html += "<input type='text' id='search' placeholder='이름, 분류, 폼, 특성, 히스토리 검색'>"
   html += "<div class='table-wrap'><table><thead><tr>"
   html += "<th style='width:60px'>No</th><th>이름</th><th>분류</th><th>상세 폼</th><th>특성</th><th>지닌 물건 히스토리</th>"
-  html += "<th>HP</th><th>ATK</th><th>DEF</th><th>SPA</th><th>SPD</th><th>SPE</th><th style='width:80px'>합계</th><th>기술 히스토리</th>"
+  html += "<th class='sortable' data-col='6'>HP<span class='arrow'>↕</span></th>"
+  html += "<th class='sortable' data-col='7'>ATK<span class='arrow'>↕</span></th>"
+  html += "<th class='sortable' data-col='8'>DEF<span class='arrow'>↕</span></th>"
+  html += "<th class='sortable' data-col='9'>SPA<span class='arrow'>↕</span></th>"
+  html += "<th class='sortable' data-col='10'>SPD<span class='arrow'>↕</span></th>"
+  html += "<th class='sortable' data-col='11'>SPE<span class='arrow'>↕</span></th>"
+  html += "<th class='sortable' data-col='12' style='width:80px'>합계<span class='arrow'>↕</span></th><th>기술 히스토리</th>"
   html += "</tr></thead><tbody id='list'>"
 
-  rows.each do |r|
+  rows.each_with_index do |r, row_index|
     move_lines = h.move_history_lines(r)
     item_lines = h.item_history_lines(r)
-    search_str = "#{r[:name]} #{r[:cat]} #{r[:form_display]} #{r[:ability]} #{move_lines.join(' ')} #{item_lines.join(' ')}".downcase
     tag_class = case r[:cat]
                 when "메가진화" then "tag tag-mega"
                 when "거다이맥스" then "tag tag-gmax"
                 when "특수 폼 진화 체인지" then "tag tag-spec"
                 else "tag tag-default"
                 end
-    html += "<tr data-s='#{h.html_escape(search_str)}'><td>#{sprintf('%04d', r[:no])}</td>"
+    html += "<tr data-original='#{row_index}'><td>#{sprintf('%04d', r[:no])}</td>"
     html += "<td style='text-align:left; font-weight:bold;'>#{h.html_escape(r[:name])}</td>"
     html += "<td><span class='#{tag_class}'>#{h.html_escape(r[:cat])}</span></td>"
     html += "<td><span style='color:#636e72;'>#{h.html_escape(r[:form_display])}</span></td>"
@@ -251,17 +256,44 @@ def pbGeneratePokeHtmlV19(rows, p_name)
   html += "<div class='modal-bg' id='histModal'><div class='modal'><div class='modal-head'><span>히스토리</span><button class='modal-close' id='histClose'>닫기</button></div><div class='modal-body' id='histBody'></div></div></div>"
   html += "<script>
     document.addEventListener('DOMContentLoaded', () => {
-      const input = document.getElementById('search');
-      const list = document.querySelectorAll('#list tr');
+      const tbody = document.getElementById('list');
       const modal = document.getElementById('histModal');
       const body = document.getElementById('histBody');
       const close = document.getElementById('histClose');
-      input.addEventListener('input', () => {
-        const q = input.value.toLowerCase().trim();
-        list.forEach(row => {
-          const text = row.getAttribute('data-s');
-          if (text.includes(q)) row.classList.remove('hidden');
-          else row.classList.add('hidden');
+      const sortState = { col: null, dir: 0 };
+      const resetArrows = () => {
+        document.querySelectorAll('th.sortable .arrow').forEach(arrow => { arrow.textContent = '↕'; });
+      };
+      const numericValue = (row, col) => {
+        const cell = row.children[col];
+        const value = cell ? parseFloat(cell.textContent.replace(/,/g, '')) : 0;
+        return isNaN(value) ? 0 : value;
+      };
+      document.querySelectorAll('th.sortable').forEach(th => {
+        th.addEventListener('click', () => {
+          const col = parseInt(th.getAttribute('data-col'), 10);
+          if (sortState.col !== col) {
+            sortState.col = col;
+            sortState.dir = 1;
+          } else {
+            sortState.dir = (sortState.dir + 1) % 3;
+          }
+          resetArrows();
+          if (sortState.dir === 0) {
+            Array.from(tbody.rows)
+              .sort((a, b) => parseInt(a.dataset.original, 10) - parseInt(b.dataset.original, 10))
+              .forEach(row => tbody.appendChild(row));
+            sortState.col = null;
+            return;
+          }
+          th.querySelector('.arrow').textContent = sortState.dir === 1 ? '↑' : '↓';
+          Array.from(tbody.rows)
+            .sort((a, b) => {
+              const diff = numericValue(a, col) - numericValue(b, col);
+              if (diff !== 0) return sortState.dir === 1 ? diff : -diff;
+              return parseInt(a.dataset.original, 10) - parseInt(b.dataset.original, 10);
+            })
+            .forEach(row => tbody.appendChild(row));
         });
       });
       document.querySelectorAll('.hist-btn').forEach(btn => {
