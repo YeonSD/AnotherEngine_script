@@ -162,12 +162,6 @@ module RandomDataHistory
     return text
   end
 
-  def self.history_cell(lines)
-    return "-" if lines.empty?
-    label = html_escape(lines[0])
-    body = html_escape(lines.join("\n")).gsub("\n", "&#10;")
-    return "<button class='hist-btn' data-body=\"#{body}\">#{label}</button>"
-  end
 end
 
 class Battle
@@ -195,7 +189,7 @@ def pbGeneratePokeHtmlV19(rows, p_name)
     .meta { text-align: center; color: #636e72; margin-bottom: 20px; font-size: 13px; border-bottom: 1px solid #eee; padding-bottom: 15px; }
     .table-wrap { overflow-x: auto; scrollbar-width: none; }
     .table-wrap::-webkit-scrollbar { display: none; }
-    table { width: 100%; min-width: 1760px; border-collapse: collapse; }
+    table { width: 100%; min-width: 1240px; border-collapse: collapse; }
     th { background: #6c5ce7; color: white; padding: 12px; position: sticky; top: 0; font-size: 14px; z-index: 10; }
     th.sortable { cursor: pointer; user-select: none; }
     th.sortable .arrow { display: inline-block; margin-left: 6px; font-size: 11px; opacity: 0.95; }
@@ -213,15 +207,8 @@ def pbGeneratePokeHtmlV19(rows, p_name)
     .tag-default { background: #b2bec3; }
     .ability { color: #0984e3; font-weight: bold; }
     .total { font-weight: bold; background: #f1f2f6; }
-    .hist-head, .hist-col { min-width: 260px; width: 260px; max-width: 260px; }
-    .hist-btn { display: block; width: 100%; border: 0; background: transparent; color: #0984e3; text-decoration: underline; cursor: pointer; font: inherit; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center; }
     .footer { text-align: center; margin-top: 30px; font-size: 12px; color: #b2bec3; border-top: 1px solid #eee; padding-top: 15px; }
     .hidden { display: none !important; }
-    .modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 1000; }
-    .modal { background: white; max-width: 760px; margin: 8vh auto; border-radius: 10px; box-shadow: 0 12px 35px rgba(0,0,0,0.25); }
-    .modal-head { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid #eee; font-weight: bold; }
-    .modal-body { padding: 20px; white-space: pre-line; line-height: 1.8; text-align: left; max-height: 65vh; overflow: auto; }
-    .modal-close { border: 0; background: #2d3436; color: white; border-radius: 6px; padding: 8px 14px; cursor: pointer; }
     .fixed-scroll { position: fixed; left: 0; right: 0; bottom: 0; height: 22px; overflow-x: auto; overflow-y: hidden; background: rgba(244,247,246,0.96); z-index: 900; }
     .fixed-scroll-inner { height: 1px; }
   </style></head><body>"
@@ -236,12 +223,9 @@ def pbGeneratePokeHtmlV19(rows, p_name)
   html += "<th class='sortable' data-col='9'>SPD<span class='arrow'>↕</span></th>"
   html += "<th class='sortable' data-col='10'>SPE<span class='arrow'>↕</span></th>"
   html += "<th class='sortable' data-col='11' style='width:80px'>합계<span class='arrow'>↕</span></th>"
-  html += "<th class='hist-head'>지닌 물건 히스토리</th><th class='hist-head'>기술 히스토리</th>"
   html += "</tr></thead><tbody id='list'>"
 
   rows.each_with_index do |r, row_index|
-    move_lines = h.move_history_lines(r)
-    item_lines = h.item_history_lines(r)
     tag_class = case r[:cat]
                 when "메가진화" then "tag tag-mega"
                 when "거다이맥스" then "tag tag-gmax"
@@ -254,25 +238,19 @@ def pbGeneratePokeHtmlV19(rows, p_name)
     html += "<td><span style='color:#636e72;'>#{h.html_escape(r[:form_display])}</span></td>"
     html += "<td class='ability'>#{h.html_escape(r[:ability])}</td>"
     r[:stats].each { |s| html += "<td>#{s}</td>" }
-    html += "<td class='total'>#{r[:total]}</td>"
-    html += "<td class='hist-col'>#{h.history_cell(item_lines)}</td>"
-    html += "<td class='hist-col'>#{h.history_cell(move_lines)}</td></tr>"
+    html += "<td class='total'>#{r[:total]}</td></tr>"
   end
 
   html += "</tbody></table></div>"
   html += "<div class='footer'>추출 시각: #{gen_at}</div>"
   html += "</div>"
   html += "<div class='fixed-scroll' id='fixedScroll'><div class='fixed-scroll-inner' id='fixedScrollInner'></div></div>"
-  html += "<div class='modal-bg' id='histModal'><div class='modal'><div class='modal-head'><span>히스토리</span><button class='modal-close' id='histClose'>닫기</button></div><div class='modal-body' id='histBody'></div></div></div>"
   html += "<script>
     document.addEventListener('DOMContentLoaded', () => {
       const tbody = document.getElementById('list');
       const tableWrap = document.querySelector('.table-wrap');
       const fixedScroll = document.getElementById('fixedScroll');
       const fixedScrollInner = document.getElementById('fixedScrollInner');
-      const modal = document.getElementById('histModal');
-      const body = document.getElementById('histBody');
-      const close = document.getElementById('histClose');
       const sortState = { col: null, dir: 0 };
       const resetArrows = () => {
         document.querySelectorAll('th.sortable .arrow').forEach(arrow => { arrow.textContent = '↕'; });
@@ -309,14 +287,6 @@ def pbGeneratePokeHtmlV19(rows, p_name)
             .forEach(row => tbody.appendChild(row));
         });
       });
-      document.querySelectorAll('.hist-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          body.textContent = btn.getAttribute('data-body') || '';
-          modal.style.display = 'block';
-        });
-      });
-      close.addEventListener('click', () => { modal.style.display = 'none'; });
-      modal.addEventListener('click', e => { if (e.target === modal) modal.style.display = 'none'; });
       const syncWidth = () => {
         fixedScrollInner.style.width = `${tableWrap.scrollWidth}px`;
         fixedScroll.style.display = tableWrap.scrollWidth > tableWrap.clientWidth ? 'block' : 'none';
