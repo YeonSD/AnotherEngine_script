@@ -195,7 +195,7 @@ def pbGeneratePokeHtmlV19(rows, p_name)
     .meta { text-align: center; color: #636e72; margin-bottom: 20px; font-size: 13px; border-bottom: 1px solid #eee; padding-bottom: 15px; }
     .table-wrap { overflow-x: auto; scrollbar-width: none; }
     .table-wrap::-webkit-scrollbar { display: none; }
-    table { width: 100%; min-width: 1420px; border-collapse: collapse; }
+    table { width: 100%; min-width: 1760px; border-collapse: collapse; }
     th { background: #6c5ce7; color: white; padding: 12px; position: sticky; top: 0; font-size: 14px; z-index: 10; }
     th.sortable { cursor: pointer; user-select: none; }
     th.sortable .arrow { display: inline-block; margin-left: 6px; font-size: 11px; opacity: 0.95; }
@@ -213,7 +213,7 @@ def pbGeneratePokeHtmlV19(rows, p_name)
     .tag-default { background: #b2bec3; }
     .ability { color: #0984e3; font-weight: bold; }
     .total { font-weight: bold; background: #f1f2f6; }
-    .hist-col { max-width: 260px; }
+    .hist-head, .hist-col { min-width: 260px; width: 260px; max-width: 260px; }
     .hist-btn { display: block; width: 100%; border: 0; background: transparent; color: #0984e3; text-decoration: underline; cursor: pointer; font: inherit; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center; }
     .footer { text-align: center; margin-top: 30px; font-size: 12px; color: #b2bec3; border-top: 1px solid #eee; padding-top: 15px; }
     .hidden { display: none !important; }
@@ -236,7 +236,7 @@ def pbGeneratePokeHtmlV19(rows, p_name)
   html += "<th class='sortable' data-col='9'>SPD<span class='arrow'>↕</span></th>"
   html += "<th class='sortable' data-col='10'>SPE<span class='arrow'>↕</span></th>"
   html += "<th class='sortable' data-col='11' style='width:80px'>합계<span class='arrow'>↕</span></th>"
-  html += "<th>지닌 물건 히스토리</th><th>기술 히스토리</th>"
+  html += "<th class='hist-head'>지닌 물건 히스토리</th><th class='hist-head'>기술 히스토리</th>"
   html += "</tr></thead><tbody id='list'>"
 
   rows.each_with_index do |r, row_index|
