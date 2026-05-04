@@ -189,11 +189,12 @@ def pbGeneratePokeHtmlV19(rows, p_name)
   h = RandomDataHistory
   html = "<!doctype html><html lang='ko'><head><meta charset='utf-8'><title>Another Red - #{h.html_escape(p_name)}</title>"
   html += "<style>
-    body { font-family: 'Malgun Gothic', sans-serif; background: #f4f7f6; padding: 20px 20px 46px; overflow-x: auto; }
-    .container { min-width: 1500px; margin: 0 auto; background: #fff; padding: 25px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+    body { font-family: 'Malgun Gothic', sans-serif; background: #f4f7f6; padding: 20px 20px 46px; overflow-x: hidden; }
+    .container { max-width: 1500px; margin: 0 auto; background: #fff; padding: 25px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
     h1 { text-align: center; color: #2d3436; margin-bottom: 5px; }
     .meta { text-align: center; color: #636e72; margin-bottom: 20px; font-size: 13px; border-bottom: 1px solid #eee; padding-bottom: 15px; }
-    .table-wrap { overflow: visible; }
+    .table-wrap { overflow-x: auto; scrollbar-width: none; }
+    .table-wrap::-webkit-scrollbar { display: none; }
     table { width: 100%; min-width: 1420px; border-collapse: collapse; }
     th { background: #6c5ce7; color: white; padding: 12px; position: sticky; top: 0; font-size: 14px; z-index: 10; }
     th.sortable { cursor: pointer; user-select: none; }
@@ -266,7 +267,7 @@ def pbGeneratePokeHtmlV19(rows, p_name)
   html += "<script>
     document.addEventListener('DOMContentLoaded', () => {
       const tbody = document.getElementById('list');
-      const container = document.querySelector('.container');
+      const tableWrap = document.querySelector('.table-wrap');
       const fixedScroll = document.getElementById('fixedScroll');
       const fixedScrollInner = document.getElementById('fixedScrollInner');
       const modal = document.getElementById('histModal');
@@ -317,19 +318,20 @@ def pbGeneratePokeHtmlV19(rows, p_name)
       close.addEventListener('click', () => { modal.style.display = 'none'; });
       modal.addEventListener('click', e => { if (e.target === modal) modal.style.display = 'none'; });
       const syncWidth = () => {
-        fixedScrollInner.style.width = `${Math.max(document.body.scrollWidth, container.scrollWidth)}px`;
+        fixedScrollInner.style.width = `${tableWrap.scrollWidth}px`;
+        fixedScroll.style.display = tableWrap.scrollWidth > tableWrap.clientWidth ? 'block' : 'none';
       };
       let syncing = false;
       fixedScroll.addEventListener('scroll', () => {
         if (syncing) return;
         syncing = true;
-        window.scrollTo({ left: fixedScroll.scrollLeft });
+        tableWrap.scrollLeft = fixedScroll.scrollLeft;
         syncing = false;
       });
-      window.addEventListener('scroll', () => {
+      tableWrap.addEventListener('scroll', () => {
         if (syncing) return;
         syncing = true;
-        fixedScroll.scrollLeft = window.scrollX;
+        fixedScroll.scrollLeft = tableWrap.scrollLeft;
         syncing = false;
       });
       window.addEventListener('resize', syncWidth);
