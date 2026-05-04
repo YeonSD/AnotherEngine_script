@@ -235,6 +235,11 @@ def pbTopRightWindow(text, scene = nil)
 end
 
 def pbChangeExp(pkmn, new_exp, scene)
+  pbSyncUnifiedExpFloor(pkmn) if defined?(pbSyncUnifiedExpFloor)
+  if defined?($exp_unify_switch) && $exp_unify_switch
+    min_exp = pkmn.growth_rate.minimum_exp_for_level(pkmn.level)
+    new_exp = [new_exp, min_exp].max
+  end
   new_exp = new_exp.clamp(0, pkmn.growth_rate.maximum_exp)
   if pkmn.exp == new_exp
     if scene.is_a?(PokemonPartyScreen)
@@ -346,6 +351,7 @@ def pbGainExpFromExpCandy(pkmn, base_amt, qty, scene)
     scene.pbDisplay(_INTL("It won't have any effect."))
     return false
   end
+  pbSyncUnifiedExpFloor(pkmn) if defined?(pbSyncUnifiedExpFloor)
   pbSEPlay("Pkmn level up")
   scene.scene.pbSetHelpText("") if scene.is_a?(PokemonPartyScreen)
   if qty > 1

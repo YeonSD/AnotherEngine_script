@@ -4,6 +4,26 @@
 $exp_unify_switch = true
 $exp_mode_index   = 2
 
+def pbSyncUnifiedExpFloor(pkmn)
+  return if !$exp_unify_switch
+  return if !pkmn
+  min_exp = pkmn.growth_rate.minimum_exp_for_level(pkmn.level)
+  if pkmn.exp < min_exp
+    pkmn.exp = min_exp
+    pkmn.calc_stats
+  end
+end
+
+def pbEachUnifiedExpPokemon
+  $player.party.each { |pkmn| yield pkmn if pkmn } if $player && $player.party
+  if defined?($PokemonStorage) && $PokemonStorage && $PokemonStorage.respond_to?(:boxes)
+    $PokemonStorage.boxes.each do |box|
+      next if !box
+      box.each { |pkmn| yield pkmn if pkmn }
+    end
+  end
+end
+
 def pbCustomE
   commands = [
     _INTL("표준 (Medium)"),
@@ -26,9 +46,7 @@ def pbCustomE
       pbMessage(_INTL("성장 속도가 \\c[1]{1}\\c[0](으)로 설정되었습니다.", growth_names[choice]))
       
       # 설정된 통일 곡선에 맞춰 파티원 경험치 정렬
-      $player.party.each do |pkmn|
-        pkmn.exp = pkmn.growth_rate.minimum_exp_for_level(pkmn.level)
-      end
+      pbEachUnifiedExpPokemon { |pkmn| pkmn.exp = pkmn.growth_rate.minimum_exp_for_level(pkmn.level) }
       
     elsif choice == 6
       # --- [2] 시스템 비활성화 (원래대로 복구) ---
@@ -36,7 +54,7 @@ def pbCustomE
       pbMessage(_INTL("시스템을 종료했습니다. 각자의 원래 속도로 복구합니다."))
       
       # 각 포켓몬의 고유 성장률(@growth_rate)을 직접 찾아내어 개별 복구
-      $player.party.each do |pkmn|
+      pbEachUnifiedExpPokemon do |pkmn|
         # pkmn.growth_rate 함수를 쓰지 않고 실제 내부 변수(@growth_rate)를 직접 참조
         original_symbol = pkmn.instance_variable_get(:@growth_rate) || :Medium
         actual_data = GameData::GrowthRate.get(original_symbol)
@@ -66,16 +84,7 @@ class Pokemon
 end
 
 EventHandlers.add(:on_game_load, :auto_apply_unified_exp, proc {
-  # 시스템이 켜져 있고, 플레이어의 파티 데이터가 존재할 때만 실행
-  if $exp_unify_switch && $player && $player.party
-    $player.party.each do |pkmn|
-      # 현재 레벨에 맞춘 최소 경험치 계산
-      expected_exp = pkmn.growth_rate.minimum_exp_for_level(pkmn.level)
-      
-      # 현재 경험치가 통일된 곡선의 경험치와 다르다면 자동 갱신
-      if pkmn.exp != expected_exp
-        pkmn.exp = expected_exp
-      end
-    end
+  if $exp_unify_switch
+    pbEachUnifiedExpPokemon { |pkmn| pbSyncUnifiedExpFloor(pkmn) }
   end
 })

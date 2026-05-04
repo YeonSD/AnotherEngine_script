@@ -187,6 +187,7 @@ def pbGeneratePokeHtmlV19(rows, p_name)
     .container { width: 100%; max-width: 1500px; box-sizing: border-box; margin: 0 auto; background: #fff; padding: 25px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); overflow: hidden; }
     h1 { text-align: center; color: #2d3436; margin-bottom: 5px; }
     .meta { text-align: center; color: #636e72; margin-bottom: 20px; font-size: 13px; border-bottom: 1px solid #eee; padding-bottom: 15px; }
+    #search { width: 100%; padding: 13px 15px; border: 2px solid #6c5ce7; border-radius: 10px; margin-bottom: 18px; box-sizing: border-box; outline: none; font-size: 15px; box-shadow: 0 2px 5px rgba(108, 92, 231, 0.16); }
     .table-wrap { width: 100%; overflow-x: auto; scrollbar-width: none; }
     .table-wrap::-webkit-scrollbar { display: none; }
     table { width: 100%; min-width: 1240px; border-collapse: collapse; }
@@ -214,6 +215,7 @@ def pbGeneratePokeHtmlV19(rows, p_name)
   </style></head><body>"
   html += "<div class='container'><h1>Another Red 랜덤 데이터</h1>"
   html += "<div class='meta'>플레이어: #{h.html_escape(p_name)} | 추출 시각: #{gen_at}</div>"
+  html += "<input type='text' id='search' placeholder='포켓몬 이름 검색...'>"
   html += "<div class='table-wrap'><table><thead><tr>"
   html += "<th class='sticky-no'>No</th><th class='sticky-name'>이름</th><th>분류</th><th>상세 폼</th><th>특성</th>"
   html += "<th class='sortable' data-col='5'>HP<span class='arrow'>↕</span></th>"
@@ -232,7 +234,7 @@ def pbGeneratePokeHtmlV19(rows, p_name)
                 when "특수 폼 진화 체인지" then "tag tag-spec"
                 else "tag tag-default"
                 end
-    html += "<tr data-original='#{row_index}'><td class='sticky-no'>#{sprintf('%04d', r[:no])}</td>"
+    html += "<tr data-original='#{row_index}' data-name='#{h.html_escape(r[:name].downcase)}'><td class='sticky-no'>#{sprintf('%04d', r[:no])}</td>"
     html += "<td class='sticky-name' style='text-align:left; font-weight:bold;'>#{h.html_escape(r[:name])}</td>"
     html += "<td><span class='#{tag_class}'>#{h.html_escape(r[:cat])}</span></td>"
     html += "<td><span style='color:#636e72;'>#{h.html_escape(r[:form_display])}</span></td>"
@@ -251,6 +253,7 @@ def pbGeneratePokeHtmlV19(rows, p_name)
       const tableWrap = document.querySelector('.table-wrap');
       const fixedScroll = document.getElementById('fixedScroll');
       const fixedScrollInner = document.getElementById('fixedScrollInner');
+      const search = document.getElementById('search');
       const sortState = { col: null, dir: 0 };
       const resetArrows = () => {
         document.querySelectorAll('th.sortable .arrow').forEach(arrow => { arrow.textContent = '↕'; });
@@ -285,6 +288,12 @@ def pbGeneratePokeHtmlV19(rows, p_name)
               return parseInt(a.dataset.original, 10) - parseInt(b.dataset.original, 10);
             })
             .forEach(row => tbody.appendChild(row));
+        });
+      });
+      search.addEventListener('input', () => {
+        const q = search.value.toLowerCase().trim();
+        Array.from(tbody.rows).forEach(row => {
+          row.classList.toggle('hidden', q.length > 0 && !row.dataset.name.includes(q));
         });
       });
       const syncWidth = () => {

@@ -91,6 +91,7 @@ class Battle
 
   def pbGainExpOne(idxParty, defeatedBattler, numPartic, expShare, expAll, showMessages = true)
     pkmn = pbParty(0)[idxParty]   # The Pokémon gaining Exp from defeatedBattler
+    pbSyncUnifiedExpFloor(pkmn) if defined?(pbSyncUnifiedExpFloor)
     growth_rate = pkmn.growth_rate
     # Don't bother calculating if gainer is already at max Exp
     if pkmn.exp >= growth_rate.maximum_exp
